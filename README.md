@@ -1,10 +1,10 @@
 # Overview
 
-EventSync offers a synchronisation between different event source and, when all the condition are met, a new event is
+EventSync offers a synchronization between different event sources and, when all the conditions are met, a new event is
 triggered. It has been designed and tested on Cloud Run. _But it can be hosted on other Google Cloud runtime environment 
 with no or a few updates_
 
-It's especially interesting to synchronise discontinuous event sources, from different project or provider.
+It's especially interesting to synchronize discontinuous event sources, from different projects or providers.
 
 *This [article](https://medium.com/google-cloud/eventsync-the-event-driven-management-missing-piece-baeb4fcb9315) 
 presents that product and the problems it tackles*
@@ -12,7 +12,7 @@ presents that product and the problems it tackles*
 # General architecture
 
 According to a configuration (see below), a number of endpoints are exposed. The event sources must reach the declared 
-endpoints to allow EventSync to track the event and detect if the condition are met to trigger a new event sync.
+endpoints to allow EventSync to track the event and detect if the conditions are met to trigger a new event sync.
 
 The sources can be a Cloud Scheduler HTTP call, a PubSub push subscription, an Eventarc source, a Workflow step or
 whatever that can perform a simple HTTP call.
@@ -20,23 +20,23 @@ whatever that can perform a simple HTTP call.
 The security is enforced by Cloud Run service. **_Be sure that your event sources have the correct permission to invoke 
 the deployed Cloud Run service._**
 
-This application use Firestore to persist the events and to check when it's the right time to trigger a new event sync.
-To optimise the query, the app create automatically the correct composite index in Firestore. ***Be careful, at the
+This application uses Firestore to persist the events and to check when it's the right time to trigger a new event sync.
+To optimize the query, the app automatically creates the correct composite index in Firestore. ***Be careful, at the
 start, it could take a few minutes before the end of the index creation and for having a fully operational solution***
 
 There are 2 types of triggers:
 * `Window`: this mode validates each endpoint and, if the conditions are met over the observation period a new event 
 sync is generated and sent to the target. The check is performed after each event received on an endpoint. 
-* `None`: only "manual" (by API call). In that case all the events stored over an observation period are retrieve and
+* `None`: only "manual" (by API call). In that case all the events stored over an observation period are retrieved and
 sent in the new event sync message. ***This case is interesting to get all the event occurs over a period of time,
 even if all the event on the different endpoints have not been received***
 
-The generated event sync message contains the detail of the eligible HTTP events: header, query param, body.
+The generated event sync message contains the details of the eligible HTTP events: header, query param, body.
 
 # Known limitations
 
-The solution is not designed to handle event with a high throughput (more than 1 event per 500ms). You could have 
-duplicated event sync message in that case.
+The solution is not designed to handle events with a high throughput (more than 1 event per 500ms). You could have 
+duplicated event sync messages in that case.
 
 The `EventID` in the event sync message is the MD5 hash of all the events (_the FirestoreID in fact_) contained in the
 event sync message. You can perform a deduplication on the consumer side if you want to avoid duplicates.
@@ -46,7 +46,7 @@ event sync message generated must not be bigger than 10Mb.
 
 # How to use
 
-You can use the public image of the project: **gcr.io/gblaquiere/eventsync**
+You can use the public image of the project: **gcr.io/gblaquiere-dev/eventsync**
 
 *You can also build the image yourselves (the `Dockerfile` and the `cloudbuild.yaml` are here to help you)*
 
@@ -86,8 +86,8 @@ Where
     is performed after each event reception.
 * `observationPeriod` is the number of seconds in the past, from now, to retrieve the events when the endpoints 
  conditions are checked. The value is in seconds and must be > 0
-* `KeepEventAfterTrigger` is a flag that indicate if the events must be flagged as exported or not after an event sync 
- message generation. This parameter is  to `false` by default. _See advanced feature for more details_
+* `KeepEventAfterTrigger` is a flag that indicates if the events must be flagged as exported or not after an event sync 
+ message generation. This parameter is set to `false` by default. _See advanced feature for more details_
 
 ### Endpoints
 ```
@@ -112,7 +112,7 @@ Where
 
 ### Sample and logs
 
-At startup, the app summarize the configuration in the logs. Checks them out!
+At startup, the app summarizes the configuration in the logs. Check them out!
 
 Here a sample configuration
 
@@ -178,11 +178,11 @@ export CONFIG='{
 }'
 ```
 
-Deploy to Cloud Run service (*here it is in `allow-unauthenticated` access for testing purpose. **Don't forget to secure the 
+Deploy to Cloud Run service (*here it is in `allow-unauthenticated` access for testing purposes. **Don't forget to secure the 
 access in your real environments!***)
 ```bash
 gcloud run deploy <CloudRunServiceName> \
-  --image=gcr.io/gblaquiere/eventsync \
+  --image=gcr.io/gblaquiere-dev/eventsync \
   --allow-unauthenticated \
   --region=us-central1 \
   --platform=managed \
@@ -190,7 +190,7 @@ gcloud run deploy <CloudRunServiceName> \
   --set-env-vars="^##^CONFIG=$CONFIG"
 ```
 *You can note here the special `^##^` to indicate gcloud CLI that the env var separator is no longer the comma `,` but the
-`##` now. It prevents issue with JSON where comma is the standard attribute separator.*
+`##` now. It prevents issues with JSON where comma is the standard attribute separator.*
 
 The deployment display the `<CloudRunServiceUrl>`
 
@@ -209,7 +209,7 @@ curl -X POST -d "New test1" <CloudRunServiceUrl>/event/entry1
 curl -X POST -d "New test2" <CloudRunServiceUrl>/event/entry2
 ```
 *For an automatic trigger, with the current configuration and a trigger type set to `window`, you have to have at least
-one event per endpoints. Check your PubSub!*
+one event per endpoint. Check your PubSub!*
 
 Manual trigger
 
@@ -249,11 +249,11 @@ generated with the same message, the ID will be the same and can help in subsequ
 }
 ```
 Where
-* `FirstEventDate` is the date of the least revent event in the trigger's observation period. Not provided is no event 
+* `FirstEventDate` is the date of the least recent event in the trigger's observation period. Not provided is no event 
 are in  the `events` list
 * `lastEventDate` is the date of the most recent event in the trigger's observation period. Not provided is no event
 are in  the `events` list
-* `numberOfEvents` is the number of event in the trigger's observation period. Can be different of the number of events
+* `numberOfEvents` is the number of events in the trigger's observation period. Can be different of the number of events
 in the `events` list
 * `events` is the array of `Event` according to the configuration
 
@@ -270,10 +270,10 @@ in the `events` list
 Where
 * `datetime` is the date of the event reception by the application
 * `eventKey` is the endpoint on which the event has been sent, represented by the eventKey
-* `headers` represents the headers of the event HTTP request. It is a map with, as key, the entry, and as value an 
-array of string.
-* `queryParams` represents the query parameters of the event HTTP request. It is a map with, as key, the entry, and as value an
-  array of string.
+* `headers` represent the headers of the event HTTP request. It is a map with, as key, the entry, and as value an 
+array of strings.
+* `queryParams` represent the query parameters of the event HTTP request. It is a map with, as key, the entry, and as value an
+  array of strings.
 * `content` is the body content of the event HTTP request
 
 
@@ -343,7 +343,7 @@ There are some advanced features to fine tune the behavior of the service
 
 By default, when an event sync is triggered, all the messages are flagged as "already exported" and won't take into 
 account in the subsequent operations:
-* Check if all the endpoints condition are met to generate a new event sync message. The conditions check take all the 
+* Check if all the endpoints conditions are met to generate a new event sync message. The conditions check take all the 
 "valid" messages, i.e. all the messages in the observation period and **not** already exported
 * Generate and event sync message with only the message used to check the endpoints conditions, i.e. all the messages 
 in the observation period and **not** already exported
@@ -377,7 +377,7 @@ gcloud auth application-default login
 gcloud auth application-default login --impersonate-service-account=<ServiceAccountEmail>
 ```
 
-When you run locally the app, the ProjectID is not automatically detected from the runtime environment thanks to the
+When you run the app locally, the ProjectID is not automatically detected from the runtime environment thanks to the
 metadata servers. To solve that, you can set an environment variable `projectID` with your project ID value.
 You also must have your `CONFIG` as environment variable
 
@@ -407,7 +407,7 @@ You can run the tests to ensure the non regression
 go test ./...
 ```
 
-Fill free to open issues for feature requests, code/documentation proposal and enhancement. ***Thanks!***
+Feel free to open issues for feature requests, code/documentation proposals and enhancement. ***Thanks!***
 
 # Licence
 
