@@ -36,12 +36,14 @@ func (e *EventHandler) Event(w http.ResponseWriter, r *http.Request) {
 		//If the query param match the configuration, store the formatted event
 		event, err := services.FormatEvent(eventKeyValue, r.URL.Query(), r.Header, r.Body)
 		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "incorrect event format")
 			return
 		}
 
 		err = e.EventService.StoreEvent(r.Context(), event)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "impossible to store the event %v in the collection %s, with error %s\n", event, e.ConfigService.GetConfig().ServiceName, err)
 			return
 		}
