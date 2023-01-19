@@ -71,6 +71,8 @@ func (t *TriggerService) TriggerEvent(ctx context.Context, eventList map[string]
 	return
 }
 
+// generateEventID generates a string which is the MD5 hash of the string composed of event's firestoreID contains in
+// eventList
 func generateEventID(eventList map[string]models.EventList) (eventId string) {
 
 	// EventIDs is the concatenation of all the Firebase IDs of the events. A hash of that string will be the EventID
