@@ -37,12 +37,15 @@ func NewEventService(ctx context.Context, configService *ConfigService) (event *
 
 	event.firestoreClient, err = firestore.NewClient(ctx, projectID)
 	if err != nil {
-		fmt.Printf("firestore new error:%s\n", err)
+		fmt.Printf("firestore new client error:%s\n", err)
 		return
 	}
 
 	//To ensure the correct Firestore collection querying, an index must exist
-	checkAndCreateIndex(ctx, projectID, configService.GetConfig().ServiceName)
+	err = checkAndCreateIndex(ctx, projectID, configService.GetConfig().ServiceName)
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -52,6 +55,7 @@ func checkAndCreateIndex(ctx context.Context, projectID string, configName strin
 	// Create the Admin client
 	adminClient, err := apiAdmin.NewFirestoreAdminClient(ctx)
 	if err != nil {
+		fmt.Printf("firestore admin new Client error:%s\n", err)
 		return err
 	}
 
@@ -135,7 +139,10 @@ func ExtractEventKey(path string) (eventKey string) {
 
 // StoreEvent persists an event in Firestore. The collection name is the config serviceName value
 func (e *EventService) StoreEvent(ctx context.Context, event models.Event) (err error) {
-	e.firestoreClient.Collection(e.configService.GetConfig().ServiceName).Add(ctx, event)
+	_, _, err = e.firestoreClient.Collection(e.configService.GetConfig().ServiceName).Add(ctx, event)
+	if err != nil {
+		return
+	}
 	fmt.Printf("event correct stored to Firestore collection %s\n", e.configService.GetConfig().ServiceName)
 	return
 }
@@ -195,6 +202,7 @@ func (e *EventService) GetEventsOverAPeriod(ctx context.Context, observationPeri
 		}
 		eventGroup.Events = events
 		eventGroup.NumberOfEvents = counter
+		eventGroup.MinNbOfOccurrence = endpoint.MinNbOfOccurrence
 		eventList[endpoint.EventKey] = eventGroup
 	}
 	return
@@ -228,7 +236,10 @@ func (e *EventService) checkTriggerConditions(eventList map[string]models.EventL
 			return false
 		}
 
-		//TODO add min occurrence check here
+		if endpoint.MinNbOfOccurrence > eventList[endpoint.EventKey].NumberOfEvents {
+			fmt.Printf("minimal number of event not satisfied for endpoint %s. Minimum is %d, got %d \n", endpoint.EventKey, endpoint.MinNbOfOccurrence, eventList[endpoint.EventKey].NumberOfEvents)
+			return false
+		}
 	}
 	return true
 }

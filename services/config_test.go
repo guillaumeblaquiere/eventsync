@@ -10,10 +10,12 @@ func generateValidConfig() *models.EventSyncConfig {
 		ServiceName: "myTest",
 		Endpoints: []models.Endpoint{
 			{
-				EventKey: "entry1",
+				EventKey:          "entry1",
+				MinNbOfOccurrence: 1,
 			},
 			{
-				EventKey: "entry2",
+				EventKey:          "entry2",
+				MinNbOfOccurrence: 1,
 			},
 		},
 		Trigger: &models.Trigger{
@@ -129,9 +131,33 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "with error negative min occurrence endpoint",
+			fields: fields{
+				eventSyncConfig: func() *models.EventSyncConfig {
+					e := generateValidConfig()
+					e.Endpoints[0].MinNbOfOccurrence = -1
+					return e
+				}(),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
 			name: "ok",
 			fields: fields{
 				eventSyncConfig: generateValidConfig(),
+			},
+			args:    args{},
+			wantErr: false,
+		},
+		{
+			name: "ok with min occurrence to 0",
+			fields: fields{
+				eventSyncConfig: func() *models.EventSyncConfig {
+					e := generateValidConfig()
+					e.Endpoints[0].MinNbOfOccurrence = 0
+					return e
+				}(),
 			},
 			args:    args{},
 			wantErr: false,

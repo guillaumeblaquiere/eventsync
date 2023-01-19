@@ -93,11 +93,14 @@ Where
 ```
 {
   "eventKey": string
+  "minNbOfOccurrence": int
 }
 ```
 Where
 * `eventKey`: the name of the endpoint path to invoke from event source. The full path will be `/event/<eventKey>`.
 The `eventKey` value must be unique in the whole list of configuration's `Endpoint`
+* `minNbOfOccurrence`: the minimal number of event to consider the endpoint as valid when a trigger check is performed.
+The value must be > 0. If it is omitted or set to 0, it is set to 1 by default.
 
 ### TargetPubSub
 ```
@@ -125,7 +128,10 @@ Here a sample configuration
         "keepEventAfterTrigger": false
     },
     "endpoints":[
-        { "eventKey": "entry1"},
+        { 
+          "eventKey": "entry1",
+          "minNbOfOccurrence": 1
+        },
         { "eventKey": "entry2"}
     ],
     "targetPubSub":{
@@ -169,7 +175,10 @@ export CONFIG='{
         "keepEventAfterTrigger": false
     },
     "endpoints":[
-        { "eventKey": "entry1"},
+        { 
+          "eventKey": "entry1",
+          "minNbOfOccurrence": 1
+        },
         { "eventKey": "entry2"}
     ],
     "targetPubSub":{
@@ -242,19 +251,21 @@ generated with the same message, the ID will be the same and can help in subsequ
 ### EventList
 ```
 {
-  "FirstEventDate": date,
+  "firstEventDate": date,
   "lastEventDate": date,
   "numberOfEvents": int,
+  "minNbOfOccurrence": int,
   "events": [Event]
 }
 ```
 Where
-* `FirstEventDate` is the date of the least recent event in the trigger's observation period. Not provided is no event 
+* `firstEventDate` is the date of the least recent event in the trigger's observation period. Not provided is no event 
 are in  the `events` list
 * `lastEventDate` is the date of the most recent event in the trigger's observation period. Not provided is no event
 are in  the `events` list
 * `numberOfEvents` is the number of events in the trigger's observation period. Can be different of the number of events
 in the `events` list
+*  `minNbOfOccurrence` is the value set in the configuration to consider the endpoint valid
 * `events` is the array of `Event` according to the configuration
 
 ### Event
@@ -290,6 +301,7 @@ Here a JSON sample
       "FirstEventDate": "2023-01-12T10:58:01.618171Z",
       "lastEventDate": "2023-01-12T10:58:01.618171Z",
       "numberOfEvents": 1,
+      "minNbOfOccurrence": 1,
       "events": [
         {
           "datetime": "2023-01-12T10:58:01.618171Z",
@@ -312,6 +324,7 @@ Here a JSON sample
       "FirstEventDate": "2023-01-12T11:06:19.432117Z",
       "lastEventDate": "2023-01-12T11:06:19.432117Z",
       "numberOfEvents": 1,
+      "minNbOfOccurrence": 1,
       "events": [
         {
           "datetime": "2023-01-12T11:06:19.432117Z",
@@ -391,7 +404,10 @@ export CONFIG='{
         "keepEventAfterTrigger": false
     },
     "endpoints":[
-        { "eventKey": "entry1"},
+        { 
+          "eventKey": "entry1",
+          "minNbOfOccurrence": 1
+        },
         { "eventKey": "entry2"}
     ],
     "targetPubSub":{

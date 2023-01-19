@@ -223,7 +223,7 @@ func TestEventService_checkTriggerConditions(t *testing.T) {
 		wantNeedTrigger bool
 	}{
 		{
-			name: "ko missing 1 event",
+			name: "ko missing 1 endpoint",
 			fields: fields{
 				configService: &ConfigService{
 					eventSyncConfig: generateValidConfig(),
@@ -231,10 +231,10 @@ func TestEventService_checkTriggerConditions(t *testing.T) {
 			},
 			args: args{
 				eventList: map[string]models.EventList{
-					"entry1": models.EventList{
+					"entry1": {
 						NumberOfEvents: 1,
 					},
-					"entry2": models.EventList{
+					"entry2": {
 						NumberOfEvents: 0,
 					},
 				},
@@ -250,7 +250,27 @@ func TestEventService_checkTriggerConditions(t *testing.T) {
 			},
 			args: args{
 				eventList: map[string]models.EventList{
-					"entry1": models.EventList{
+					"entry1": {
+						NumberOfEvents: 1,
+					},
+				},
+			},
+			wantNeedTrigger: false,
+		},
+		{
+			name: "ko missing 1 event",
+			fields: fields{
+				configService: &ConfigService{
+					eventSyncConfig: func() *models.EventSyncConfig {
+						e := generateValidConfig()
+						e.Endpoints[0].MinNbOfOccurrence = 2
+						return e
+					}(),
+				},
+			},
+			args: args{
+				eventList: map[string]models.EventList{
+					"entry1": {
 						NumberOfEvents: 1,
 					},
 				},
@@ -266,10 +286,56 @@ func TestEventService_checkTriggerConditions(t *testing.T) {
 			},
 			args: args{
 				eventList: map[string]models.EventList{
-					"entry1": models.EventList{
+					"entry1": {
 						NumberOfEvents: 1,
 					},
-					"entry2": models.EventList{
+					"entry2": {
+						NumberOfEvents: 1,
+					},
+				},
+			},
+			wantNeedTrigger: true,
+		},
+		{
+			name: "ok number of event 2",
+			fields: fields{
+				configService: &ConfigService{
+					eventSyncConfig: func() *models.EventSyncConfig {
+						e := generateValidConfig()
+						e.Endpoints[0].MinNbOfOccurrence = 2
+						return e
+					}(),
+				},
+			},
+			args: args{
+				eventList: map[string]models.EventList{
+					"entry1": {
+						NumberOfEvents: 2,
+					},
+					"entry2": {
+						NumberOfEvents: 1,
+					},
+				},
+			},
+			wantNeedTrigger: true,
+		},
+		{
+			name: "ok number of event > 2",
+			fields: fields{
+				configService: &ConfigService{
+					eventSyncConfig: func() *models.EventSyncConfig {
+						e := generateValidConfig()
+						e.Endpoints[0].MinNbOfOccurrence = 2
+						return e
+					}(),
+				},
+			},
+			args: args{
+				eventList: map[string]models.EventList{
+					"entry1": {
+						NumberOfEvents: 3,
+					},
+					"entry2": {
 						NumberOfEvents: 1,
 					},
 				},

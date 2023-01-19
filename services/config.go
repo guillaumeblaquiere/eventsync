@@ -104,6 +104,17 @@ func (c *ConfigService) checkConfigEndpoints(logKO string, logOK string) (string
 					logKO += fmt.Sprintf("The endpoints eventKeys must be unique. the eventKey %q is duplicated at index %d and %q\n", endpoint.EventKey, j, i)
 				}
 			}
+
+			if endpoint.MinNbOfOccurrence < 0 {
+				logKO += fmt.Sprintf("The minimal number of required event must be strictly positive for tne endpoint eventKey %q\n", endpoint.EventKey)
+			}
+			if endpoint.MinNbOfOccurrence == 0 {
+				// Set one by default
+				endpoint.MinNbOfOccurrence = 1
+			}
+			// Check the min instance
+			logOK += fmt.Sprintf("    The minimal number of required event is set to %d\n", endpoint.MinNbOfOccurrence)
+
 		}
 	}
 	return logKO, logOK

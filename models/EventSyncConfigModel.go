@@ -10,7 +10,10 @@ type Endpoint struct {
 	//Filter string `json:"filter"`
 	//KeepAllValues bool `json:"keepAllValues"`
 
-	//MinNbOfOccurrence int `json:"minNbOfOccurrence"`
+	// MinNbOfOccurrence is the minimal number of events to consider the endpoint valid for an automatic trigger.
+	// The value must be > 0. If it is omitted or set to 0, it is set to 1 by default.
+	MinNbOfOccurrence int `json:"minNbOfOccurrence"`
+	// TODO is optional?
 }
 
 /*------------------*/

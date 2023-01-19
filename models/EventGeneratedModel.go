@@ -8,13 +8,15 @@ import (
 type EventList struct {
 	// FirstEventDate is the oldest event logged in the Trigger's observation period.
 	// This event might be not included in the Events array, according to the endpoint configuration
-	FirstEventDate *time.Time `json:"FirstEventDate,omitempty"`
+	FirstEventDate *time.Time `json:"firstEventDate,omitempty"`
 	// LastEventDate is the youngest event logged in the Trigger's observation period
 	// This event might be not included in the Events array, according to the endpoint configuration
 	LastEventDate *time.Time `json:"lastEventDate,omitempty"`
 	// NumberOfEvents is the number of logged events over the Trigger's observation period
 	// This number of events might be match the Events array size, according to the endpoint configuration.
 	NumberOfEvents int `json:"numberOfEvents"`
+	// MinNbOfOccurrence is the value set in the configuration to consider the endpoint valid
+	MinNbOfOccurrence int `json:"minNbOfOccurrence"`
 	// Events is the list of Event over the Trigger's observation period and that match the endpoint configuration
 	Events []Event `json:"events,omitempty"`
 }
