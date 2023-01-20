@@ -105,6 +105,24 @@ func (c *ConfigService) checkConfigEndpoints(logKO string, logOK string) (string
 				}
 			}
 
+			// Check the HTTP Method
+			for j, method := range endpoint.AcceptedHttpMethods {
+				m := models.HttpMethodType(strings.ToUpper(string(method)))
+				switch m {
+				case models.HttpMethodTypePut, models.HttpMethodTypeConnect, models.HttpMethodTypeDelete, models.HttpMethodTypeOptions, models.HttpMethodTypeHead, models.HttpMethodTypePost, models.HttpMethodTypeTrace, models.HttpMethodTypeGet:
+					// Update with the upper case value
+					endpoint.AcceptedHttpMethods[j] = m
+				default:
+					logKO += fmt.Sprintf("The accepted method %q is not valid for tne endpoint eventKey %q\n", method, endpoint.EventKey)
+				}
+			}
+			if len(endpoint.AcceptedHttpMethods) == 0 {
+				// Add all the accepted methods
+				endpoint.AcceptedHttpMethods = append(endpoint.AcceptedHttpMethods, models.HttpMethodTypePut, models.HttpMethodTypeConnect, models.HttpMethodTypeDelete, models.HttpMethodTypeOptions, models.HttpMethodTypeHead, models.HttpMethodTypePost, models.HttpMethodTypeTrace, models.HttpMethodTypeGet)
+			}
+			logOK += fmt.Sprintf("     the accepted methods are %v\n", endpoint.AcceptedHttpMethods)
+
+			// Check the min occurrence
 			if endpoint.MinNbOfOccurrence < 0 {
 				logKO += fmt.Sprintf("The minimal number of required event must be strictly positive for tne endpoint eventKey %q\n", endpoint.EventKey)
 			}
@@ -112,8 +130,7 @@ func (c *ConfigService) checkConfigEndpoints(logKO string, logOK string) (string
 				// Set one by default
 				endpoint.MinNbOfOccurrence = 1
 			}
-			// Check the min instance
-			logOK += fmt.Sprintf("    The minimal number of required event is set to %d\n", endpoint.MinNbOfOccurrence)
+			logOK += fmt.Sprintf("     The minimal number of required event is set to %d\n", endpoint.MinNbOfOccurrence)
 
 		}
 	}

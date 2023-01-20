@@ -6,6 +6,7 @@ import (
 	"eventsync/services"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 // EventHandler is the URL request handler for the events' acquisition
@@ -30,11 +31,14 @@ func (e *EventHandler) Event(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Work only with upper case method
+	method := strings.ToUpper(r.Method)
+
 	// check if accepted endpoint
-	if e.EventService.MatchEndpoint(eventKeyValue) {
+	if err := e.EventService.MatchEndpoint(eventKeyValue, method); err == nil {
 
 		//If the query param match the configuration, store the formatted event
-		event, err := services.FormatEvent(eventKeyValue, r.URL.Query(), r.Header, r.Body)
+		event, err := services.FormatEvent(eventKeyValue, r.URL.Query(), r.Header, r.Body, method)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "incorrect event format")
@@ -57,9 +61,10 @@ func (e *EventHandler) Event(w http.ResponseWriter, r *http.Request) {
 
 		return
 
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, err.Error())
 	}
-	w.WriteHeader(http.StatusBadRequest)
-	fmt.Fprintf(w, "incorrect value for eventKey the path")
 
 }
 

@@ -2,11 +2,33 @@ package models
 
 /*------------------*/
 
+type HttpMethodType string
+
+const (
+	// HttpMethodTypeGet is the HTTP GET method string representation
+	HttpMethodTypeGet HttpMethodType = "GET"
+	// HttpMethodTypePost is the HTTP POST method string representation
+	HttpMethodTypePost = "POST"
+	// HttpMethodTypeOptions is the HTTP OPTIONS method string representation
+	HttpMethodTypeOptions = "OPTIONS"
+	// HttpMethodTypeHead is the HTTP HEAD method string representation
+	HttpMethodTypeHead = "HEAD"
+	// HttpMethodTypePut is the HTTP PUT method string representation
+	HttpMethodTypePut = "PUT"
+	// HttpMethodTypeDelete is the HTTP DELETE method string representation
+	HttpMethodTypeDelete = "DELETE"
+	// HttpMethodTypeTrace is the HTTP TRACE method string representation
+	HttpMethodTypeTrace = "TRACE"
+	// HttpMethodTypeConnect is the HTTP CONNECT method string representation
+	HttpMethodTypeConnect = "CONNECT"
+)
+
 // Endpoint is the definition of event acquisition path
 type Endpoint struct {
 	// EventKey is the URL path suffix to add to submit that type of events to the app
 	EventKey string `json:"eventKey"`
-	//AcceptedHttpVerbs
+	// AcceptedHttpMethods is the list of accepted HTTP request method of type httpMethodType
+	AcceptedHttpMethods []HttpMethodType `json:"acceptedHttpMethods,omitempty"`
 	//Filter string `json:"filter"`
 	//KeepAllValues bool `json:"keepAllValues"`
 

@@ -58,6 +58,9 @@ func (t *TriggerService) TriggerEvent(ctx context.Context, eventList map[string]
 	// Send it according to the target configuration
 	if t.configService.GetConfig().TargetPubSub != nil {
 		err = t.triggerPubSub(ctx, eventGenerated)
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("keep the events after the trigger set to %v\n", t.configService.GetConfig().Trigger.KeepEventAfterTrigger)

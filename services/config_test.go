@@ -10,7 +10,10 @@ func generateValidConfig() *models.EventSyncConfig {
 		ServiceName: "myTest",
 		Endpoints: []models.Endpoint{
 			{
-				EventKey:          "entry1",
+				EventKey: "entry1",
+				AcceptedHttpMethods: []models.HttpMethodType{
+					models.HttpMethodTypeGet,
+				},
 				MinNbOfOccurrence: 1,
 			},
 			{
@@ -143,6 +146,35 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "with error 1 invalid method among 1",
+			fields: fields{
+				eventSyncConfig: func() *models.EventSyncConfig {
+					e := generateValidConfig()
+					e.Endpoints[0].AcceptedHttpMethods = []models.HttpMethodType{
+						"PO",
+					}
+					return e
+				}(),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
+			name: "with error 1 invalid method among 2",
+			fields: fields{
+				eventSyncConfig: func() *models.EventSyncConfig {
+					e := generateValidConfig()
+					e.Endpoints[0].AcceptedHttpMethods = []models.HttpMethodType{
+						"GET",
+						"PO",
+					}
+					return e
+				}(),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
 			name: "ok",
 			fields: fields{
 				eventSyncConfig: generateValidConfig(),
@@ -156,6 +188,33 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 				eventSyncConfig: func() *models.EventSyncConfig {
 					e := generateValidConfig()
 					e.Endpoints[0].MinNbOfOccurrence = 0
+					return e
+				}(),
+			},
+			args:    args{},
+			wantErr: false,
+		},
+		{
+			name: "ok with lower case accepted method",
+			fields: fields{
+				eventSyncConfig: func() *models.EventSyncConfig {
+					e := generateValidConfig()
+					e.Endpoints[0].AcceptedHttpMethods = []models.HttpMethodType{
+						"GeT",
+						"post",
+					}
+					return e
+				}(),
+			},
+			args:    args{},
+			wantErr: false,
+		},
+		{
+			name: "ok with no accepted method",
+			fields: fields{
+				eventSyncConfig: func() *models.EventSyncConfig {
+					e := generateValidConfig()
+					e.Endpoints[0].AcceptedHttpMethods = []models.HttpMethodType{}
 					return e
 				}(),
 			},

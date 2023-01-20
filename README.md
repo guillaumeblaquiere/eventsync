@@ -93,12 +93,15 @@ Where
 ```
 {
   "eventKey": string
+  "AcceptedHttpMethods": [string]
   "minNbOfOccurrence": int
 }
 ```
 Where
 * `eventKey`: the name of the endpoint path to invoke from event source. The full path will be `/event/<eventKey>`.
 The `eventKey` value must be unique in the whole list of configuration's `Endpoint`
+* `AcceptedHttpMethods`: the list of accepted HTTP method for that `Endpoint`. The values can be GET, POST, OPTIONS, 
+HEAD, PUT, DELETE, TRACE, CONNECT. If omit, all the methods will be accepted
 * `minNbOfOccurrence`: the minimal number of event to consider the endpoint as valid when a trigger check is performed.
 The value must be > 0. If it is omitted or set to 0, it is set to 1 by default.
 
@@ -130,6 +133,7 @@ Here a sample configuration
     "endpoints":[
         { 
           "eventKey": "entry1",
+          "acceptedHttpMethods": ["POST"],
           "minNbOfOccurrence": 1
         },
         { "eventKey": "entry2"}
@@ -177,6 +181,7 @@ export CONFIG='{
     "endpoints":[
         { 
           "eventKey": "entry1",
+          "acceptedHttpMethods": ["POST"],
           "minNbOfOccurrence": 1
         },
         { "eventKey": "entry2"}
@@ -276,6 +281,7 @@ in the `events` list
   "headers": map[string][string],
   "queryParams": map[string][string],
   "content": string
+  "method": string
 }
 ```
 Where
@@ -286,6 +292,7 @@ array of strings.
 * `queryParams` represent the query parameters of the event HTTP request. It is a map with, as key, the entry, and as value an
   array of strings.
 * `content` is the body content of the event HTTP request
+* `method` is the HTTP method of the event HTTP request
 
 
 ### Sample 
@@ -316,7 +323,8 @@ Here a JSON sample
               "myQueryP"
             ]
           },
-          "content": "New test1"
+          "content": "New test1",
+          "method": "POST"
         }
       ]
     },
@@ -339,7 +347,8 @@ Here a JSON sample
               "myQueryP"
             ]
           },
-          "content": "New test2"
+          "content": "New test2",
+          "method": "POST"
         }
       ]
     }
@@ -406,6 +415,7 @@ export CONFIG='{
     "endpoints":[
         { 
           "eventKey": "entry1",
+          "acceptedHttpMethods": ["POST"],
           "minNbOfOccurrence": 1
         },
         { "eventKey": "entry2"}

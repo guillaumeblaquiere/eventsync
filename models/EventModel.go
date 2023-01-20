@@ -21,4 +21,6 @@ type Event struct {
 	QueryParams map[string][]string `json:"queryParams,omitempty"`
 	// Content is the body content of the event HTTP request
 	Content interface{} `json:"content,omitempty"`
+	// Method is the HTTP method of the event HTTP request
+	Method HttpMethodType `json:"httpMethod"`
 }

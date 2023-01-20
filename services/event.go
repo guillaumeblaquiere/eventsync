@@ -5,6 +5,7 @@ import (
 	apiAdmin "cloud.google.com/go/firestore/apiv1/admin"
 	"cloud.google.com/go/firestore/apiv1/admin/adminpb"
 	"context"
+	"errors"
 	"eventsync/models"
 	"eventsync/utils"
 	"fmt"
@@ -108,7 +109,7 @@ func checkAndCreateIndex(ctx context.Context, projectID string, configName strin
 
 // FormatEvent takes the raw parts of an HTTP requests and create a models.Event object with those part, without
 // transformation.
-func FormatEvent(eventKey string, queryParam map[string][]string, headers map[string][]string, body io.ReadCloser) (event models.Event, err error) {
+func FormatEvent(eventKey string, queryParam map[string][]string, headers map[string][]string, body io.ReadCloser, method string) (event models.Event, err error) {
 	event.EventKey = eventKey
 	event.Datetime = time.Now()
 
@@ -123,6 +124,7 @@ func FormatEvent(eventKey string, queryParam map[string][]string, headers map[st
 	defer body.Close()
 
 	event.Content = string(b)
+	event.Method = models.HttpMethodType(method)
 	return
 }
 
@@ -246,12 +248,26 @@ func (e *EventService) checkTriggerConditions(eventList map[string]models.EventL
 
 // MatchEndpoint checks if the current provided eventKeyValue meets one on the endpoints set in the configuration. If
 // so, return True.
-func (e *EventService) MatchEndpoint(eventKeyValue string) bool {
+func (e *EventService) MatchEndpoint(eventKeyValue string, method string) (err error) {
 	for _, endpoint := range e.configService.GetConfig().Endpoints {
 		if endpoint.EventKey == eventKeyValue {
+			if contains(endpoint.AcceptedHttpMethods, models.HttpMethodType(method)) {
+				return nil
+			} else {
+				return errors.New(fmt.Sprintf("invalid method %q for endpoint %q\n", method, eventKeyValue))
+			}
+		}
+	}
+	return errors.New(fmt.Sprintf("invalid endpoint %q\n", eventKeyValue))
+}
+
+func contains(s []models.HttpMethodType, str models.HttpMethodType) bool {
+	for _, v := range s {
+		if v == str {
 			return true
 		}
 	}
+
 	return false
 }
 
