@@ -17,6 +17,8 @@ type EventList struct {
 	NumberOfEvents int `json:"numberOfEvents"`
 	// MinNbOfOccurrence is the value set in the configuration to consider the endpoint valid
 	MinNbOfOccurrence int `json:"minNbOfOccurrence"`
+	// EventToSend is the value set in the configuration to define the event to add in the generated event sync message
+	EventToSend EventToSendType `json:"eventToSend"`
 	// Events is the list of Event over the Trigger's observation period and that match the endpoint configuration
 	Events []Event `json:"events,omitempty"`
 }

@@ -14,6 +14,7 @@ func generateValidConfig() *models.EventSyncConfig {
 				AcceptedHttpMethods: []models.HttpMethodType{
 					models.HttpMethodTypeGet,
 				},
+				EventToSend:       "ALL",
 				MinNbOfOccurrence: 1,
 			},
 			{
@@ -175,6 +176,30 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "with error invalid eventToSend",
+			fields: fields{
+				eventSyncConfig: func() *models.EventSyncConfig {
+					e := generateValidConfig()
+					e.Endpoints[0].EventToSend = "test"
+					return e
+				}(),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
+			name: "with error lower case eventToSend",
+			fields: fields{
+				eventSyncConfig: func() *models.EventSyncConfig {
+					e := generateValidConfig()
+					e.Endpoints[0].EventToSend = "all"
+					return e
+				}(),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
 			name: "ok",
 			fields: fields{
 				eventSyncConfig: generateValidConfig(),
@@ -215,6 +240,18 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 				eventSyncConfig: func() *models.EventSyncConfig {
 					e := generateValidConfig()
 					e.Endpoints[0].AcceptedHttpMethods = []models.HttpMethodType{}
+					return e
+				}(),
+			},
+			args:    args{},
+			wantErr: false,
+		},
+		{
+			name: "ok with no eventToSend set",
+			fields: fields{
+				eventSyncConfig: func() *models.EventSyncConfig {
+					e := generateValidConfig()
+					e.Endpoints[0].EventToSend = ""
 					return e
 				}(),
 			},
