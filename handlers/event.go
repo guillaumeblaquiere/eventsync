@@ -74,8 +74,10 @@ func (e *EventHandler) postProcessEvent(ctx context.Context) (err error) {
 	if needTrigger {
 		err = e.TriggerService.TriggerEvent(ctx, eventList)
 		if err != nil {
-			return errors.New(fmt.Sprintf("no trigger done after the event storage\n"))
+			return errors.New(fmt.Sprintf("impossible to perform the trigger with error %s\n", err))
 		}
+	} else {
+		return errors.New(fmt.Sprintf("no trigger done after the event storage\n"))
 	}
 	return
 }
