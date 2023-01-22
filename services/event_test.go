@@ -262,7 +262,7 @@ func TestEventService_checkTriggerConditions(t *testing.T) {
 		configService *ConfigService
 	}
 	type args struct {
-		eventList map[string]models.EventList
+		events map[string][]models.Event
 	}
 	tests := []struct {
 		name            string
@@ -271,6 +271,23 @@ func TestEventService_checkTriggerConditions(t *testing.T) {
 		wantNeedTrigger bool
 	}{
 		{
+			name: "ko  1 empty endpoint",
+			fields: fields{
+				configService: &ConfigService{
+					eventSyncConfig: generateValidConfig(),
+				},
+			},
+			args: args{
+				events: map[string][]models.Event{
+					"entry1": {
+						{},
+					},
+					"entry2": {},
+				},
+			},
+			wantNeedTrigger: false,
+		},
+		{
 			name: "ko missing 1 endpoint",
 			fields: fields{
 				configService: &ConfigService{
@@ -278,113 +295,71 @@ func TestEventService_checkTriggerConditions(t *testing.T) {
 				},
 			},
 			args: args{
-				eventList: map[string]models.EventList{
+				events: map[string][]models.Event{
 					"entry1": {
-						NumberOfEvents: 1,
-					},
-					"entry2": {
-						NumberOfEvents: 0,
+						{},
 					},
 				},
 			},
 			wantNeedTrigger: false,
 		},
 		{
-			name: "ko missing 1 entry",
+			name: "KO min occurr not satisfied",
+			fields: fields{
+				configService: &ConfigService{
+					eventSyncConfig: func() *models.EventSyncConfig {
+						g := generateValidConfig()
+						g.Endpoints[0].MinNbOfOccurrence = 2
+						return g
+					}(),
+				},
+			},
+			args: args{
+				events: map[string][]models.Event{
+					"entry1": {
+						{},
+					},
+					"entry2": {
+						{},
+					},
+				},
+			},
+			wantNeedTrigger: false,
+		},
+		{
+			name: "Ok, nb event = min occurr",
 			fields: fields{
 				configService: &ConfigService{
 					eventSyncConfig: generateValidConfig(),
 				},
 			},
 			args: args{
-				eventList: map[string]models.EventList{
+				events: map[string][]models.Event{
 					"entry1": {
-						NumberOfEvents: 1,
+						{},
+					},
+					"entry2": {
+						{},
 					},
 				},
 			},
-			wantNeedTrigger: false,
+			wantNeedTrigger: true,
 		},
 		{
-			name: "ko missing 1 event",
-			fields: fields{
-				configService: &ConfigService{
-					eventSyncConfig: func() *models.EventSyncConfig {
-						e := generateValidConfig()
-						e.Endpoints[0].MinNbOfOccurrence = 2
-						return e
-					}(),
-				},
-			},
-			args: args{
-				eventList: map[string]models.EventList{
-					"entry1": {
-						NumberOfEvents: 1,
-					},
-				},
-			},
-			wantNeedTrigger: false,
-		},
-		{
-			name: "ok number of event 1",
+			name: "Ok, nb event > min occurr",
 			fields: fields{
 				configService: &ConfigService{
 					eventSyncConfig: generateValidConfig(),
 				},
 			},
 			args: args{
-				eventList: map[string]models.EventList{
+				events: map[string][]models.Event{
 					"entry1": {
-						NumberOfEvents: 1,
+						{},
+						{},
 					},
 					"entry2": {
-						NumberOfEvents: 1,
-					},
-				},
-			},
-			wantNeedTrigger: true,
-		},
-		{
-			name: "ok number of event 2",
-			fields: fields{
-				configService: &ConfigService{
-					eventSyncConfig: func() *models.EventSyncConfig {
-						e := generateValidConfig()
-						e.Endpoints[0].MinNbOfOccurrence = 2
-						return e
-					}(),
-				},
-			},
-			args: args{
-				eventList: map[string]models.EventList{
-					"entry1": {
-						NumberOfEvents: 2,
-					},
-					"entry2": {
-						NumberOfEvents: 1,
-					},
-				},
-			},
-			wantNeedTrigger: true,
-		},
-		{
-			name: "ok number of event > 2",
-			fields: fields{
-				configService: &ConfigService{
-					eventSyncConfig: func() *models.EventSyncConfig {
-						e := generateValidConfig()
-						e.Endpoints[0].MinNbOfOccurrence = 2
-						return e
-					}(),
-				},
-			},
-			args: args{
-				eventList: map[string]models.EventList{
-					"entry1": {
-						NumberOfEvents: 3,
-					},
-					"entry2": {
-						NumberOfEvents: 1,
+						{},
 					},
 				},
 			},
@@ -396,7 +371,7 @@ func TestEventService_checkTriggerConditions(t *testing.T) {
 			e := &EventService{
 				configService: tt.fields.configService,
 			}
-			if gotNeedTrigger := e.checkTriggerConditions(tt.args.eventList); gotNeedTrigger != tt.wantNeedTrigger {
+			if gotNeedTrigger := e.checkTriggerConditions(tt.args.events); gotNeedTrigger != tt.wantNeedTrigger {
 				t.Errorf("checkTriggerConditions() = %v, wantErr %v", gotNeedTrigger, tt.wantNeedTrigger)
 			}
 		})

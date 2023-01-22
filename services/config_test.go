@@ -19,7 +19,18 @@ func generateValidConfig() *models.EventSyncConfig {
 			},
 			{
 				EventKey:          "entry2",
+				EventToSend:       "ALL",
 				MinNbOfOccurrence: 1,
+				AcceptedHttpMethods: []models.HttpMethodType{
+					models.HttpMethodTypeGet,
+					models.HttpMethodTypePut,
+					models.HttpMethodTypePost,
+					models.HttpMethodTypeTrace,
+					models.HttpMethodTypeOptions,
+					models.HttpMethodTypeHead,
+					models.HttpMethodTypeDelete,
+					models.HttpMethodTypeConnect,
+				},
 			},
 		},
 		Trigger: &models.Trigger{
@@ -32,6 +43,8 @@ func generateValidConfig() *models.EventSyncConfig {
 		},
 	}
 }
+
+// TODO improve test by checking output config
 
 func TestConfigService_CheckConfig(t *testing.T) {
 	type fields struct {

@@ -150,8 +150,8 @@ func (e *EventService) StoreEvent(ctx context.Context, event models.Event) (err 
 }
 
 // GetEventsOverAPeriod retrieves the events stored in Firestore in the past observationPeriod. Only the not
-// alreadyExported event are taken into account. The eventlist groups the event per eventKeys.
-func (e *EventService) GetEventsOverAPeriod(ctx context.Context, observationPeriod int64) (eventList map[string]models.EventList, err error) {
+// alreadyExported event are taken into account. The events output groups the events per eventKeys.
+func (e *EventService) GetEventsOverAPeriod(ctx context.Context, observationPeriod int64) (events map[string][]models.Event, err error) {
 
 	//Define globally the time of reference
 	targetDatetime := time.Now().Add(-time.Duration(observationPeriod) * time.Second)
@@ -159,17 +159,15 @@ func (e *EventService) GetEventsOverAPeriod(ctx context.Context, observationPeri
 	// The base query select the events in the observation period and not already exported
 	query := e.firestoreClient.Collection(e.configService.GetConfig().ServiceName).Where("Datetime", ">", targetDatetime).Where("AlreadyExported", "==", false)
 
-	eventList = make(map[string]models.EventList, len(e.configService.GetConfig().Endpoints))
+	events = make(map[string][]models.Event, len(e.configService.GetConfig().Endpoints))
 
 	//Perform Query for all endpoints in th config
 	for _, endpoint := range e.configService.GetConfig().Endpoints {
 		// Specialize the query to request per eventKey
 		iter := query.Where("EventKey", "==", endpoint.EventKey).Documents(ctx)
-		counter := 0
 
-		// Initialize the  list of events of that eventKey
-		eventGroup := models.EventList{}
-		events := make([]models.Event, 0)
+		// Initialize the  list of rawEvents of that eventKey
+		rawEvents := make([]models.Event, 0)
 		for {
 			var doc *firestore.DocumentSnapshot
 			doc, err = iter.Next()
@@ -181,8 +179,7 @@ func (e *EventService) GetEventsOverAPeriod(ctx context.Context, observationPeri
 				fmt.Printf("error during the document retrieval with error: %s\n", err)
 				return
 			}
-			// Count the number of events in the observation period
-			counter += 1
+			// Count the number of rawEvents in the observation period
 			event := &models.Event{}
 			err = doc.DataTo(&event)
 			if err != nil {
@@ -191,28 +188,16 @@ func (e *EventService) GetEventsOverAPeriod(ctx context.Context, observationPeri
 			}
 			// Keep the documentID for later use
 			event.FirestoreDocumentID = doc.Ref.ID
-			events = append(events, *event)
-
-			//TODO add keep all/first/last here
-			// Update the metrics (last and first event in the observation period
-			if eventGroup.LastEventDate == nil || event.Datetime.After(*eventGroup.LastEventDate) {
-				eventGroup.LastEventDate = &event.Datetime
-			}
-			if eventGroup.FirstEventDate == nil || event.Datetime.Before(*eventGroup.FirstEventDate) {
-				eventGroup.FirstEventDate = &event.Datetime
-			}
+			rawEvents = append(rawEvents, *event)
 		}
-		eventGroup.Events = events
-		eventGroup.NumberOfEvents = counter
-		eventGroup.MinNbOfOccurrence = endpoint.MinNbOfOccurrence
-		eventList[endpoint.EventKey] = eventGroup
+		events[endpoint.EventKey] = rawEvents
 	}
 	return
 }
 
 // MeetTriggerConditions checks if the currently stored events meet the conditions to trigger a trigger. If so, the
-// needTrigger output is True and the eventList contains the events to put in the trigger
-func (e *EventService) MeetTriggerConditions(ctx context.Context) (eventList map[string]models.EventList, needTrigger bool, err error) {
+// needTrigger output is True and the events contains the events to put in the trigger
+func (e *EventService) MeetTriggerConditions(ctx context.Context) (events map[string][]models.Event, needTrigger bool, err error) {
 
 	if e.configService.GetConfig().Trigger.Type == models.TriggerTypeNone {
 		fmt.Println("TriggerType set to None. No automatic evaluation")
@@ -220,26 +205,28 @@ func (e *EventService) MeetTriggerConditions(ctx context.Context) (eventList map
 	}
 
 	// Get the list of event in the observation period
-	eventList, err = e.GetEventsOverAPeriod(ctx, e.configService.GetConfig().Trigger.ObservationPeriod)
+	events, err = e.GetEventsOverAPeriod(ctx, e.configService.GetConfig().Trigger.ObservationPeriod)
 	if err != nil {
 		return
 	}
 
 	// Evaluate against the configuration if all the events are here to trigger a new event.
-	return eventList, e.checkTriggerConditions(eventList), nil
+	return events, e.checkTriggerConditions(events), nil
 }
 
 // checkTriggerConditions uses a list of events and validate against the configuration the requirement to trigger a
 // trigger
-func (e *EventService) checkTriggerConditions(eventList map[string]models.EventList) (needTrigger bool) {
+func (e *EventService) checkTriggerConditions(events map[string][]models.Event) (needTrigger bool) {
+
 	for _, endpoint := range e.configService.GetConfig().Endpoints {
-		if _, ok := eventList[endpoint.EventKey]; !ok || eventList[endpoint.EventKey].NumberOfEvents == 0 {
+		numberOfEvents := len(events[endpoint.EventKey])
+		if _, ok := events[endpoint.EventKey]; !ok || numberOfEvents == 0 {
 			fmt.Printf("missing event entry for endpoint %s. Conditions are not met for a trigger\n", endpoint.EventKey)
 			return false
 		}
 
-		if endpoint.MinNbOfOccurrence > eventList[endpoint.EventKey].NumberOfEvents {
-			fmt.Printf("minimal number of event not satisfied for endpoint %s. Minimum is %d, got %d \n", endpoint.EventKey, endpoint.MinNbOfOccurrence, eventList[endpoint.EventKey].NumberOfEvents)
+		if endpoint.MinNbOfOccurrence > numberOfEvents {
+			fmt.Printf("minimal number of event not satisfied for endpoint %s. Minimum is %d, got %d \n", endpoint.EventKey, endpoint.MinNbOfOccurrence, numberOfEvents)
 			return false
 		}
 	}
@@ -271,9 +258,9 @@ func contains(s []models.HttpMethodType, str models.HttpMethodType) bool {
 	return false
 }
 
-// ResetEvents updates the events provided in the eventList to set the parameter AlreadyExported to True. Like that
+// ResetEvents updates the events provided in the events to set the parameter AlreadyExported to True. Like that
 // the event won't be retrieved during the future queries.
-func (e *EventService) ResetEvents(ctx context.Context, eventList map[string]models.EventList) {
+func (e *EventService) ResetEvents(ctx context.Context, events map[string][]models.Event) {
 
 	fmt.Printf("set all the events has already exported to reset the context.\n")
 
@@ -284,8 +271,8 @@ func (e *EventService) ResetEvents(ctx context.Context, eventList map[string]mod
 		},
 	}
 
-	for _, eventGroup := range eventList {
-		for _, event := range eventGroup.Events {
+	for _, eventGroup := range events {
+		for _, event := range eventGroup {
 			_, err := e.firestoreClient.Collection(e.configService.GetConfig().ServiceName).Doc(event.FirestoreDocumentID).Update(ctx, update)
 			if err != nil {
 				fmt.Printf("impossible to update the state of the documentID %s, with error %s", event.FirestoreDocumentID, err)

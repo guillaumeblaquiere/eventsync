@@ -34,5 +34,5 @@ type EventGenerated struct {
 	// TriggerTpe is the type of trigger (TriggerTypeWindow or TriggerTypeNone)
 	TriggerTpe triggerType `json:"triggerType"`
 	// Events is the list of events of each eventKey.
-	Events map[string]EventList `json:"events"` //key is the eventKey
+	Events map[string]*EventList `json:"events"` //key is the eventKey
 }
