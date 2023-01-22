@@ -151,7 +151,6 @@ func (c *ConfigService) checkConfigEndpoints(logKO string, logOK string) (string
 				endpoint.MinNbOfOccurrence = 1
 			}
 			logOK += fmt.Sprintf("     The minimal number of required event is set to %d\n", endpoint.MinNbOfOccurrence)
-
 		}
 	}
 	return logKO, logOK

@@ -97,7 +97,7 @@ type EventSyncConfig struct {
 	// ServiceName is the name of the service, also use to create the Firestore collection
 	ServiceName string `json:"serviceName"`
 	// Endpoints is the list of different event required to sync before triggering a new one
-	Endpoints []Endpoint `json:"endpoints"`
+	Endpoints []*Endpoint `json:"endpoints"`
 	// Trigger is the conditions to meet for triggering a new event
 	Trigger *Trigger `json:"trigger"`
 	// TargetPubSub is the PubSub configuration to publish the new event in.

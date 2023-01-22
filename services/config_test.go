@@ -2,13 +2,14 @@ package services
 
 import (
 	"eventsync/models"
+	"reflect"
 	"testing"
 )
 
 func generateValidConfig() *models.EventSyncConfig {
 	return &models.EventSyncConfig{
 		ServiceName: "myTest",
-		Endpoints: []models.Endpoint{
+		Endpoints: []*models.Endpoint{
 			{
 				EventKey: "entry1",
 				AcceptedHttpMethods: []models.HttpMethodType{
@@ -44,16 +45,15 @@ func generateValidConfig() *models.EventSyncConfig {
 	}
 }
 
-// TODO improve test by checking output config
-
 func TestConfigService_CheckConfig(t *testing.T) {
 	type fields struct {
 		eventSyncConfig *models.EventSyncConfig
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
+		name       string
+		fields     fields
+		wantErr    bool
+		wantConfig *models.EventSyncConfig
 	}{
 		{
 			name: "get error",
@@ -67,7 +67,8 @@ func TestConfigService_CheckConfig(t *testing.T) {
 			fields: fields{
 				eventSyncConfig: generateValidConfig(),
 			},
-			wantErr: false,
+			wantErr:    false,
+			wantConfig: generateValidConfig(),
 		},
 	}
 	for _, tt := range tests {
@@ -77,6 +78,9 @@ func TestConfigService_CheckConfig(t *testing.T) {
 			}
 			if err := c.CheckConfig(); (err != nil) != tt.wantErr {
 				t.Errorf("CheckConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && !reflect.DeepEqual(c.eventSyncConfig, tt.wantConfig) {
+				t.Errorf("output c.eventSyncConfig = %+v, want %+v", c.eventSyncConfig, tt.wantConfig)
 			}
 		})
 	}
@@ -91,10 +95,11 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 		logOK string
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name       string
+		fields     fields
+		args       args
+		wantErr    bool
+		wantConfig *models.EventSyncConfig
 	}{
 		{
 			name: "with error nil endpoint",
@@ -138,7 +143,7 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 			fields: fields{
 				eventSyncConfig: func() *models.EventSyncConfig {
 					e := generateValidConfig()
-					e.Endpoints = []models.Endpoint{
+					e.Endpoints = []*models.Endpoint{
 						e.Endpoints[0],
 					}
 					return e
@@ -217,8 +222,9 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 			fields: fields{
 				eventSyncConfig: generateValidConfig(),
 			},
-			args:    args{},
-			wantErr: false,
+			args:       args{},
+			wantErr:    false,
+			wantConfig: generateValidConfig(),
 		},
 		{
 			name: "ok with min occurrence to 0",
@@ -229,8 +235,9 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 					return e
 				}(),
 			},
-			args:    args{},
-			wantErr: false,
+			args:       args{},
+			wantErr:    false,
+			wantConfig: generateValidConfig(),
 		},
 		{
 			name: "ok with lower case accepted method",
@@ -246,6 +253,14 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 			},
 			args:    args{},
 			wantErr: false,
+			wantConfig: func() *models.EventSyncConfig {
+				e := generateValidConfig()
+				e.Endpoints[0].AcceptedHttpMethods = []models.HttpMethodType{
+					"GET",
+					"POST",
+				}
+				return e
+			}(),
 		},
 		{
 			name: "ok with no accepted method",
@@ -258,6 +273,13 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 			},
 			args:    args{},
 			wantErr: false,
+			wantConfig: func() *models.EventSyncConfig {
+				e := generateValidConfig()
+				e.Endpoints[0].AcceptedHttpMethods = []models.HttpMethodType{
+					"PUT", "CONNECT", "DELETE", "OPTIONS", "HEAD", "POST", "TRACE", "GET",
+				}
+				return e
+			}(),
 		},
 		{
 			name: "ok with no eventToSend set",
@@ -268,8 +290,9 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 					return e
 				}(),
 			},
-			args:    args{},
-			wantErr: false,
+			args:       args{},
+			wantErr:    false,
+			wantConfig: generateValidConfig(),
 		},
 	}
 	for _, tt := range tests {
@@ -280,6 +303,13 @@ func TestConfigService_checkConfigEndpoints(t *testing.T) {
 			got, _ := c.checkConfigEndpoints(tt.args.logKO, tt.args.logOK)
 			if (got != "") != tt.wantErr {
 				t.Errorf("checkConfigEndpoints() got = %v, wantErr %v", got, tt.wantErr)
+			}
+			if !tt.wantErr {
+				for i, endpoint := range c.eventSyncConfig.Endpoints {
+					if !reflect.DeepEqual(endpoint, tt.wantConfig.Endpoints[i]) {
+						t.Errorf("output c.eventSyncConfig.Encpoints[%d] = %+v, want %+v", i, endpoint, tt.wantConfig.Endpoints[i])
+					}
+				}
 			}
 		})
 	}
