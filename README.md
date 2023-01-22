@@ -94,6 +94,7 @@ Where
 {
   "eventKey": string
   "AcceptedHttpMethods": [string]
+  "eventToSend": string
   "minNbOfOccurrence": int
 }
 ```
@@ -101,7 +102,14 @@ Where
 * `eventKey`: the name of the endpoint path to invoke from event source. The full path will be `/event/<eventKey>`.
 The `eventKey` value must be unique in the whole list of configuration's `Endpoint`
 * `AcceptedHttpMethods`: the list of accepted HTTP method for that `Endpoint`. The values can be GET, POST, OPTIONS, 
-HEAD, PUT, DELETE, TRACE, CONNECT. If omit, all the methods will be accepted
+HEAD, PUT, DELETE, TRACE, CONNECT. If omitted, all the methods will be accepted
+* `eventToSend`: define the event to add in the generated event sync message. Possible values are: ALL, FIRST, LAST,
+BOUNDARIES. `ALL` is set by default (if missing).
+  * `ALL`: all the event in the observation period are added to the event sync message
+  * `FIRST`: only the first event in the observation period is added to the event sync message
+  * `LAST`: only the latest event in the observation period is added to the event sync message
+  * `BOUNDARIES`: only the first and the latest event in the observation period are added to the event sync message. If 
+  there is only 1 event, it is not duplicated.
 * `minNbOfOccurrence`: the minimal number of event to consider the endpoint as valid when a trigger check is performed.
 The value must be > 0. If it is omitted or set to 0, it is set to 1 by default.
 
@@ -134,6 +142,7 @@ Here a sample configuration
         { 
           "eventKey": "entry1",
           "acceptedHttpMethods": ["POST"],
+          "eventToSend": "ALL",
           "minNbOfOccurrence": 1
         },
         { "eventKey": "entry2"}
@@ -182,6 +191,7 @@ export CONFIG='{
         { 
           "eventKey": "entry1",
           "acceptedHttpMethods": ["POST"],
+          "eventToSend": "ALL",
           "minNbOfOccurrence": 1
         },
         { "eventKey": "entry2"}
@@ -260,6 +270,7 @@ generated with the same message, the ID will be the same and can help in subsequ
   "lastEventDate": date,
   "numberOfEvents": int,
   "minNbOfOccurrence": int,
+  "eventToSend": string
   "events": [Event]
 }
 ```
@@ -270,7 +281,8 @@ are in  the `events` list
 are in  the `events` list
 * `numberOfEvents` is the number of events in the trigger's observation period. Can be different of the number of events
 in the `events` list
-*  `minNbOfOccurrence` is the value set in the configuration to consider the endpoint valid
+* `minNbOfOccurrence` is the value set in the configuration to consider the endpoint valid
+* `eventToSend` is the value set in the configuration to define the event to add in the generated event sync message
 * `events` is the array of `Event` according to the configuration
 
 ### Event
@@ -309,6 +321,7 @@ Here a JSON sample
       "lastEventDate": "2023-01-12T10:58:01.618171Z",
       "numberOfEvents": 1,
       "minNbOfOccurrence": 1,
+      "eventToSend": "ALL",
       "events": [
         {
           "datetime": "2023-01-12T10:58:01.618171Z",
@@ -333,6 +346,7 @@ Here a JSON sample
       "lastEventDate": "2023-01-12T11:06:19.432117Z",
       "numberOfEvents": 1,
       "minNbOfOccurrence": 1,
+      "eventToSend": "ALL",
       "events": [
         {
           "datetime": "2023-01-12T11:06:19.432117Z",
@@ -416,6 +430,7 @@ export CONFIG='{
         { 
           "eventKey": "entry1",
           "acceptedHttpMethods": ["POST"],
+          "eventToSend": "ALL",
           "minNbOfOccurrence": 1
         },
         { "eventKey": "entry2"}

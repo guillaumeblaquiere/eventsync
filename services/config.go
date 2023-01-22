@@ -122,6 +122,26 @@ func (c *ConfigService) checkConfigEndpoints(logKO string, logOK string) (string
 			}
 			logOK += fmt.Sprintf("     the accepted methods are %v\n", endpoint.AcceptedHttpMethods)
 
+			// Check the eventToSend
+			if endpoint.EventToSend == "" {
+				endpoint.EventToSend = models.EventToSendTypeAll
+				logOK += fmt.Sprintf("     by default, all the events in the observation period will be included in the generated event sync message\n")
+			} else {
+
+				switch endpoint.EventToSend {
+				case models.EventToSendTypeAll:
+					logOK += fmt.Sprintf("     all the events in the observation period will be included in the generated event sync message\n")
+				case models.EventToSendTypeBoundaries:
+					logOK += fmt.Sprintf("     only the first and latest event in the observation period will be included in the generated event sync message\n")
+				case models.EventToSendTypeFirst:
+					logOK += fmt.Sprintf("     only the first event in the observation period will be included in the generated event sync message\n")
+				case models.EventToSendTypeLast:
+					logOK += fmt.Sprintf("     only the latest event in the observation period will be included in the generated event sync message\n")
+				default:
+					logKO += fmt.Sprintf("The event to send value %q is not valid for tne endpoint eventKey %q. Accepted values are: ALL, FIRST, LAST, BOUNDARIES\n", endpoint.EventToSend, endpoint.EventKey)
+				}
+			}
+
 			// Check the min occurrence
 			if endpoint.MinNbOfOccurrence < 0 {
 				logKO += fmt.Sprintf("The minimal number of required event must be strictly positive for tne endpoint eventKey %q\n", endpoint.EventKey)
@@ -131,7 +151,6 @@ func (c *ConfigService) checkConfigEndpoints(logKO string, logOK string) (string
 				endpoint.MinNbOfOccurrence = 1
 			}
 			logOK += fmt.Sprintf("     The minimal number of required event is set to %d\n", endpoint.MinNbOfOccurrence)
-
 		}
 	}
 	return logKO, logOK

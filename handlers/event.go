@@ -71,13 +71,13 @@ func (e *EventHandler) Event(w http.ResponseWriter, r *http.Request) {
 // postProcessEvent performs processing after the correct storage of the event, like checking if an event sync has
 // to be generated
 func (e *EventHandler) postProcessEvent(ctx context.Context) (err error) {
-	eventList, needTrigger, err := e.EventService.MeetTriggerConditions(ctx)
+	events, needTrigger, err := e.EventService.MeetTriggerConditions(ctx)
 	if err != nil {
 		return errors.New(fmt.Sprintf("impossible to check the trigger conditions with error: %s\n", err))
 	}
 
 	if needTrigger {
-		err = e.TriggerService.TriggerEvent(ctx, eventList)
+		err = e.TriggerService.TriggerEvent(ctx, events)
 		if err != nil {
 			return errors.New(fmt.Sprintf("impossible to perform the trigger with error %s\n", err))
 		}

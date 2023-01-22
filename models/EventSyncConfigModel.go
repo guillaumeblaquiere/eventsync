@@ -23,6 +23,24 @@ const (
 	HttpMethodTypeConnect = "CONNECT"
 )
 
+// EventToSendType is the type to define the event to add in te event sync message when generated
+type EventToSendType string
+
+const (
+	// EventToSendTypeAll indicates that all the event in the observationPeriod must be included in the generated event
+	// sync message
+	EventToSendTypeAll EventToSendType = "ALL"
+	// EventToSendTypeFirst indicates that only the first event in the observationPeriod must be included in the
+	// generated event sync message
+	EventToSendTypeFirst = "FIRST"
+	// EventToSendTypeLast indicates that only the latest event in the observationPeriod must be included in the
+	// generated event sync message
+	EventToSendTypeLast = "LAST"
+	// EventToSendTypeBoundaries indicates that only the first and the latest events in the observationPeriod must
+	// be included in the generated event sync message
+	EventToSendTypeBoundaries = "BOUNDARIES"
+)
+
 // Endpoint is the definition of event acquisition path
 type Endpoint struct {
 	// EventKey is the URL path suffix to add to submit that type of events to the app
@@ -30,7 +48,8 @@ type Endpoint struct {
 	// AcceptedHttpMethods is the list of accepted HTTP request method of type httpMethodType
 	AcceptedHttpMethods []HttpMethodType `json:"acceptedHttpMethods,omitempty"`
 	//Filter string `json:"filter"`
-	//KeepAllValues bool `json:"keepAllValues"`
+	// EventToSend defines the values to include in the event sync message. Values can be ALL, FIRST, LAST, BOUNDARIES
+	EventToSend EventToSendType `json:"eventToSend"`
 
 	// MinNbOfOccurrence is the minimal number of events to consider the endpoint valid for an automatic trigger.
 	// The value must be > 0. If it is omitted or set to 0, it is set to 1 by default.
@@ -78,7 +97,7 @@ type EventSyncConfig struct {
 	// ServiceName is the name of the service, also use to create the Firestore collection
 	ServiceName string `json:"serviceName"`
 	// Endpoints is the list of different event required to sync before triggering a new one
-	Endpoints []Endpoint `json:"endpoints"`
+	Endpoints []*Endpoint `json:"endpoints"`
 	// Trigger is the conditions to meet for triggering a new event
 	Trigger *Trigger `json:"trigger"`
 	// TargetPubSub is the PubSub configuration to publish the new event in.
