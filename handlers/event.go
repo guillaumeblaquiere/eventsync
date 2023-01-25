@@ -53,12 +53,17 @@ func (e *EventHandler) Event(w http.ResponseWriter, r *http.Request) {
 		}
 		fmt.Fprintf(w, "event correct stored to Firestore collection %s\n", e.ConfigService.GetConfig().ServiceName)
 
-		//FIXME could perform this task async with Always on option on Cloud Run
-		err = e.postProcessEvent(r.Context())
-		if err != nil {
-			fmt.Fprintf(w, err.Error())
+		if e.ConfigService.IsAsyncEventTriggerProcessing() {
+			// perform async processing
+			fmt.Printf("post process event performed asynchronouly\n")
+			go e.postProcessEvent(r.Context())
+		} else {
+			fmt.Printf("post process event performed synchronouly\n")
+			err = e.postProcessEvent(r.Context())
+			if err != nil {
+				fmt.Fprintf(w, err.Error())
+			}
 		}
-
 		return
 
 	} else {
@@ -71,6 +76,7 @@ func (e *EventHandler) Event(w http.ResponseWriter, r *http.Request) {
 // postProcessEvent performs processing after the correct storage of the event, like checking if an event sync has
 // to be generated
 func (e *EventHandler) postProcessEvent(ctx context.Context) (err error) {
+
 	events, needTrigger, err := e.EventService.MeetTriggerConditions(ctx)
 	if err != nil {
 		return errors.New(fmt.Sprintf("impossible to check the trigger conditions with error: %s\n", err))

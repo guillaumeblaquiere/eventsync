@@ -210,8 +210,8 @@ gcloud run deploy <CloudRunServiceName> \
   --allow-unauthenticated \
   --region=us-central1 \
   --platform=managed \
-  --service-account=<ServiceAccountEmail>
-  --set-env-vars="^##^CONFIG=$CONFIG"
+  --service-account=<ServiceAccountEmail> \
+  --set-env-vars="^##^CONFIG=$CONFIG" 
 ```
 *You can note here the special `^##^` to indicate gcloud CLI that the env var separator is no longer the comma `,` but the
 `##` now. It prevents issues with JSON where comma is the standard attribute separator.*
@@ -397,6 +397,55 @@ message.
 It's interesting in case of config change, or when a bug is fixed in the event sources to resume from a clean state and
 context.
 
+## Asynchronous post event processing
+
+You can wish to keep a low latency in the event ingestion and to provide response ASAP to the event source. You have
+the capacity to perform asynchronously the post event storage, _i.e. the trigger evaluation and the event sync message 
+generation and sending (if applicable)_
+
+That means only the event check and storage is performed synchronously and the request answer is sent. The rest of the
+processing is performed in background.
+
+Because you will need compute power OUTSIDE request handling, you have to use the 
+[CPU Always ON](https://cloud.google.com/run/docs/configuring/cpu-allocation) on Cloud Run, *i.e. to
+deactivate the CPU Throttling*
+
+Natively, the app checks the current Cloud Run configuration. If the CPU Always On feature is activated, the post
+process will be performed asynchronously.
+
+However, for testing purpose, or to override that default behavior, you can force the behavior by setting the 
+environment variable `ASYNC_EVENT_TRIGGER` to 
+* `True` to force the asynchronous mode
+* `False` to force the synchronous mode
+
+*The case of the values does not matter*
+
+Example of Cloud Run deployment with automatic configuration detection
+```bash
+gcloud run deploy <CloudRunServiceName> \
+  --image=gcr.io/gblaquiere-dev/eventsync \
+  --allow-unauthenticated \
+  --region=us-central1 \
+  --no-cpu-throttling \
+  --platform=managed \
+  --service-account=<ServiceAccountEmail> \
+  --set-env-vars="^##^CONFIG=$CONFIG"
+  
+#Use --cpu-throttling to force the default Cloud Run behavior 
+```
+
+Example of Cloud Run deployment with force behavior
+```bash
+gcloud run deploy <CloudRunServiceName> \
+  --image=gcr.io/gblaquiere-dev/eventsync \
+  --allow-unauthenticated \
+  --region=us-central1 \
+  --cpu-throttling \
+  --platform=managed \
+  --service-account=<ServiceAccountEmail> \
+  --set-env-vars="^##^CONFIG=$CONFIG##ASYNC_EVENT_TRIGGER=True"
+```
+
 # Contribution and local use
 
 You can run locally the code with Golang installed on your environment and with the correct Google Cloud credential
@@ -439,6 +488,9 @@ export CONFIG='{
         "topic": "projects/<ProjectID>/topics/<TopicName>"
     }
 }'
+
+# Optionally set the asynchronous mode
+export ASYNC_EVENT_TRIGGER="True"
 
 projectID=<YourProjectID> go run .
 ```
