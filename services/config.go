@@ -4,25 +4,42 @@ import (
 	"encoding/json"
 	"errors"
 	"eventsync/models"
+	"eventsync/utils"
 	"fmt"
+	"os"
 	"strings"
 )
 
 // ConfigService in the configuration of EventSync instance. It contains the detail of the loaded configuration
 type ConfigService struct {
+	// eventSyncConfig is the representation of the configuration of the app
 	eventSyncConfig *models.EventSyncConfig
+	// isAsyncEventTriggerMode is the asynchronous processing mode set in the application.
+	isAsyncEventTrigger bool
 }
 
 const ConfigEnvVar = "CONFIG"
+const ForceAsyncEventTriggerEnvVar = "ASYNC_EVENT_TRIGGER"
 
 // LoadConfig creates a ConfigService based on the JSON config in parameter.
 func LoadConfig(config string) (conf *ConfigService, err error) {
 
 	conf = &ConfigService{
-		eventSyncConfig: &models.EventSyncConfig{},
+		eventSyncConfig:     &models.EventSyncConfig{},
+		isAsyncEventTrigger: isAsyncEventTriggerMode(),
 	}
 	err = json.Unmarshal([]byte(config), conf.eventSyncConfig)
 	return
+}
+
+func isAsyncEventTriggerMode() bool {
+	forceAsyncEventTriggerConfig := strings.ToLower(os.Getenv(ForceAsyncEventTriggerEnvVar)) == "true"
+	cloudRunCPUThrottledConfig := utils.IsCloudRunCPUThrottled()
+
+	if cloudRunCPUThrottledConfig && forceAsyncEventTriggerConfig {
+		fmt.Printf("the environment variable %q is set to TRUE to process asynchronuously the event to trigger, but the current runtime configuration can have issues with multi processing. Be aware of that possible flaws if you have delay or issues on event generation\n", ForceAsyncEventTriggerEnvVar)
+	}
+	return forceAsyncEventTriggerConfig || !cloudRunCPUThrottledConfig
 }
 
 // CheckConfig verifies if the provided JSON configuration is operationally correct. A description of the configuration
@@ -191,4 +208,10 @@ func (c *ConfigService) checkConfigRootValues(logKO string, logOK string) (strin
 // GetConfig returns the stored configuration of the service.
 func (c *ConfigService) GetConfig() (eventSyncConfig *models.EventSyncConfig) {
 	return c.eventSyncConfig
+}
+
+// IsAsyncEventTriggerProcessing returns true is the event trigger computation and event sync message generation has
+// to be done asynchronously (after the request response sent)
+func (c *ConfigService) IsAsyncEventTriggerProcessing() bool {
+	return c.isAsyncEventTrigger
 }
