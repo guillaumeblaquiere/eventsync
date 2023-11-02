@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Read HTTP Stream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <style>
+        .text-area {
+            overflow-y: auto !important;
+            border: 1px solid darkgray !important;
+            font-size: 13px !important;
+        }
+    </style>
+    <script>
+        // Set the global values
+        let demoBackendUurl = "wss://eventsync-demo-fqffbf2xsq-uc.a.run.app";
+        let eventsyncUrl = "https://eventsync-fqffbf2xsq-uc.a.run.app"
+
+        // Create a new WebSocket object.
+        let socket = new WebSocket(demoBackendUurl);
+
+        let actionLogsField;
+
+        // Create a window event listener to read the HTTP stream when the page loads
+        window.addEventListener("load", async () => {
+            actionLogsField = document.getElementById("actionLogs");
+            // Get the current config
+            document.getElementById("eventsyncURL").value = eventsyncUrl
+            document.getElementById("backendDemoURL").value = demoBackendUurl
+
+            const eventsyncConfig = document.getElementById("eventsyncConfig");
+            const data = await get(eventsyncUrl, "/config");
+            console.log(JSON.stringify(data, null, 2));
+            eventsyncConfig.value = JSON.stringify(JSON.parse(data), null, 2);
+
+            await readStream();
+        });
+
+        // Create a function to read the HTTP stream
+        async function readStream() {
+            const textField = document.getElementById("eventsyncOutput");
+            // Listen for the `message` event.
+            socket.addEventListener("message", function (event) {
+                const now = new Date();
+
+                // Display the message in the document.
+                let data = JSON.stringify(JSON.parse(event.data), null, 2);
+                textField.value = now.toISOString().substring(0, 19) + " -----------------\n" + data + "\n\n" + textField.value;
+                actionLogsField.value = "PubSub message received \n" + actionLogsField.value;
+            });
+
+        }
+
+        // Create a function that perform a GET to an endpoint and return the body content
+        async function get(url, suffix) {
+            const response = await fetch(url + suffix);
+            actionLogsField.value = suffix + " -> HTTP " + response.status + "\n" + actionLogsField.value;
+            const data = await response.text();
+            return data;
+        }
+
+        window.addEventListener("unload", function () {
+            // Close the EventSource object.
+            socket.send("goodbye")
+            socket.close()
+        });
+
+        function apply() {
+            eventsyncUrl = document.getElementById("eventsyncURL").value;
+            demoBackendUurl = document.getElementById("backendDemoURL").value;
+            socket = new WebSocket(demoBackendUurl);
+            readStream()
+        }
+
+    </script>
+</head>
+<body align="center">
+
+<div style="float: left;width: 50%; padding: 20px;">
+    <!-- Split the content into 2 columns -->
+    <div style="height: 100px">
+        <span>Event simulation</span><br>
+        <!-- button that perform a GET to a url -->
+        <button  class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/event/entryA')">Event A</button>&nbsp;
+        <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/event/entryB')">Event B</button>&nbsp;
+        <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/event/entryC')">Event C</button>
+        <br/><br/>
+        <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/trigger')">Force Trigger</button>&nbsp;&nbsp;
+        <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/reset')">Reset entries</button>
+        <br/>
+    </div>
+    <br/><br/>
+    <div>
+        <span>Current Config</span><br>
+        <textarea type="text" id="eventsyncConfig" style="height: 600px;"
+                  class="materialize-textarea text-area"></textarea>
+    </div>
+</div>
+<div style="float: right;width: 50%; padding: 20px;">
+    <div style="height: 100px">
+        <span>Action logs</span><br/>
+        <textarea type="text" id="actionLogs" style="height: 100%;" class="materialize-textarea text-area"></textarea>
+    </div>
+    <br/><br/>
+    <div>
+        <span>PubSub flow</span><br/>
+        <textarea type="text" id="eventsyncOutput" style="height: 600px;"
+                  class="materialize-textarea text-area"></textarea>
+    </div>
+</div>
+<div class="row" >
+    <div class="input-field col ">
+        <span>Eventsync URL</span>
+        <input id="eventsyncURL" type="text">
+    </div>
+    <div class="input-field col ">
+        <span>Demo backend URL</span>
+        <input id="backendDemoURL" type="text">
+    </div>
+    <div class="input-field col ">
+        <button class="btn waves-effect waves-light col" type="submit" name="action" onclick="apply()">Apply</button>
+    </div>
+</div>
+</body>
+</html>

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"eventsync/services"
+	"eventsync/utils"
 	"net/http"
 )
 
@@ -14,6 +15,8 @@ type ConfigHandler struct {
 
 // Config is the function to handle the config export request
 func (c *ConfigHandler) Config(w http.ResponseWriter, r *http.Request) {
+	utils.EnableCors(&w)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(c.ConfigService.GetConfig())

@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const projectIdKeyEnvVar = "projectID"
+const projectIdKeyEnvVar = "PROJECT_ID"
 
 // GetProjectId extracts the project ID from the server metadata on Google Cloud (through credential) else try to finc
 // the value in the projectIdKeyEnvVar environment variable

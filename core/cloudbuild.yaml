@@ -1,0 +1,24 @@
+steps:
+  - name: 'golang:1.21'
+    dir: core
+    script: |
+             go test ./...
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    dir: core
+    args:
+      - -c
+      - |
+          echo ${_IMAGE_NAME}
+          docker build -t ${_IMAGE_NAME} .
+          docker push ${_IMAGE_NAME}
+          echo ${TAG_NAME}
+          if [ ! -z ${TAG_NAME} ]
+          then 
+            docker build -t ${_IMAGE_NAME}:${TAG_NAME} .
+            docker push ${_IMAGE_NAME}:${TAG_NAME}
+          fi
+substitutions:
+  _IMAGE_NAME: gcr.io/${PROJECT_ID}/eventsync
+options:
+  dynamic_substitutions: true

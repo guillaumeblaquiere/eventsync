@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"eventsync/services"
+	"eventsync/utils"
 	"fmt"
 	"net/http"
 )
@@ -17,6 +18,7 @@ type ResetHandler struct {
 // Reset is the function to handle the reset request, to cancel all the previous event over the configured observation
 // period
 func (rh *ResetHandler) Reset(w http.ResponseWriter, r *http.Request) {
+	utils.EnableCors(&w)
 
 	events, err := rh.EventService.GetEventsOverAPeriod(r.Context(), rh.ConfigService.GetConfig().Trigger.ObservationPeriod)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"eventsync/services"
+	"eventsync/utils"
 	"fmt"
 	"net/http"
 	"strings"
@@ -21,6 +22,7 @@ type EventHandler struct {
 
 // Event is the function to handle the event acquisition request
 func (e *EventHandler) Event(w http.ResponseWriter, r *http.Request) {
+	utils.EnableCors(&w)
 
 	// extract the eventKey
 	eventKeyValue := services.ExtractEventKey(r.URL.Path)

@@ -9,8 +9,6 @@ import (
 	"os"
 )
 
-const configEnvVar = "CONFIG"
-
 func main() {
 
 	config := os.Getenv(services.ConfigEnvVar)

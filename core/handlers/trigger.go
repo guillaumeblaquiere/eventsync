@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"eventsync/services"
+	"eventsync/utils"
 	"fmt"
 	"net/http"
 )
@@ -18,6 +19,7 @@ type TriggerHandler struct {
 
 // Trigger is the function to force the trigger by API request.
 func (t *TriggerHandler) Trigger(w http.ResponseWriter, r *http.Request) {
+	utils.EnableCors(&w)
 
 	eventList, err := t.EventService.GetEventsOverAPeriod(r.Context(), t.ConfigService.GetConfig().Trigger.ObservationPeriod)
 	if err != nil {
