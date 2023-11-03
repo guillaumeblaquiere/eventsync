@@ -97,7 +97,7 @@ let demoBackendUurl = "<eventsyncDemo service URL>";
 let eventsyncUrl = "<eventsync service URL>"
 ```
 
-Open the `index.html` in your browser.
+Open the `index.html` in your browser. You can also use an [online viewer](http://htmlpreview.github.io/?https://github.com/guillaumeblaquiere/eventsync/blob/main/demo/frontend/index.html)
 
 *You can also update those values directly in the web page (in the bottom, and click `APPLY`)*
 

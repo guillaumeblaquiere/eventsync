@@ -11,11 +11,16 @@ import (
 	"os"
 )
 
+// PubSub Subscription name must be set in env var
 const subscriptionEnvVar = "SUBSCRIPTION"
 
+// ProjectID in case of user credential usage (for local development/run)
 const projectIDEnvVar = "PROJECT_ID"
 
+// Singleton PubSub client
 var client *pubsub.Client
+
+// Subscription name (extracted from env var)
 var subscriptionName string
 
 func main() {
@@ -62,19 +67,22 @@ func main() {
 }
 
 func ws(ws *websocket.Conn) {
-	fmt.Println("Connected")
+	fmt.Println("New connection")
 
+	// Get the subscription
 	subscription := client.Subscription(subscriptionName)
 
-	// Send welcome message
+	// Send welcome message with the subscription name
 	err := websocket.Message.Send(ws, fmt.Sprintf("{\"subscription\" : \"%s\"}", subscription.String()))
 	if err != nil {
 		fmt.Println("Can't send")
 		return
 	}
 
+	// Create a cancelable context to handle the websocket client-side disconnection
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// Receive message from the client. Anything means goodbye
 	go func() {
 		var msg string
 		err := websocket.Message.Receive(ws, &msg)
@@ -82,15 +90,19 @@ func ws(ws *websocket.Conn) {
 		if err != nil {
 			fmt.Println("Can't receive")
 		}
+		// Cancel the context
 		cancel()
+		// Close the websocket
 		ws.Close()
 		return
 	}()
 
+	// Receive messages from the pubsub subscription and until context cancellation.
 	subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		// Get the message data, assume it is in JSON format
 		data := string(msg.Data)
 
+		// Forward all message data to the websocket client
 		err := websocket.Message.Send(ws, data)
 		if err != nil {
 			fmt.Println("Can't send")
@@ -103,6 +115,7 @@ func ws(ws *websocket.Conn) {
 
 }
 
+// Get the project ID from credential or from Env Var (for local environment)
 func getProjectId(ctx context.Context) string {
 	projectID := os.Getenv(projectIDEnvVar)
 	if projectID == "" {

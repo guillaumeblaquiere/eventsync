@@ -35,7 +35,7 @@
             await readStream();
         });
 
-        // Create a function to read the HTTP stream
+        // Create a function to read the HTTP stream and update the output text area
         async function readStream() {
             const textField = document.getElementById("eventsyncOutput");
             // Listen for the `message` event.
@@ -50,7 +50,7 @@
 
         }
 
-        // Create a function that perform a GET to an endpoint and return the body content
+        // Create a function that perform a GET to an endpoint, return the body content and update the action logs
         async function get(url, suffix) {
             const response = await fetch(url + suffix);
             actionLogsField.value = suffix + " -> HTTP " + response.status + "\n" + actionLogsField.value;
@@ -58,12 +58,15 @@
             return data;
         }
 
+        // Create a window event listener to close the websocket object when the page unloads
         window.addEventListener("unload", function () {
-            // Close the EventSource object.
+            // Send a goodbye message to the server.
             socket.send("goodbye")
+            // Close the WebSocket connection.
             socket.close()
         });
 
+        // Create a function to apply the new URL config
         function apply() {
             eventsyncUrl = document.getElementById("eventsyncURL").value;
             demoBackendUurl = document.getElementById("backendDemoURL").value;
@@ -76,10 +79,10 @@
 <body align="center">
 
 <div style="float: left;width: 50%; padding: 20px;">
-    <!-- Split the content into 2 columns -->
+    <!-- button that perform a GET to a url -->
     <div style="height: 100px">
         <span>Event simulation</span><br>
-        <!-- button that perform a GET to a url -->
+
         <button  class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/event/entryA')">Event A</button>&nbsp;
         <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/event/entryB')">Event B</button>&nbsp;
         <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/event/entryC')">Event C</button>
@@ -89,6 +92,7 @@
         <br/>
     </div>
     <br/><br/>
+    <!-- Display the current config -->
     <div>
         <span>Current Config</span><br>
         <textarea type="text" id="eventsyncConfig" style="height: 600px;"
@@ -96,18 +100,21 @@
     </div>
 </div>
 <div style="float: right;width: 50%; padding: 20px;">
+    <!-- display the action/event logs -->
     <div style="height: 100px">
         <span>Action logs</span><br/>
         <textarea type="text" id="actionLogs" style="height: 100%;" class="materialize-textarea text-area"></textarea>
     </div>
     <br/><br/>
     <div>
-        <span>PubSub flow</span><br/>
+        <!-- Pubsub output message content -->
+        <span>PubSub Message content</span><br/>
         <textarea type="text" id="eventsyncOutput" style="height: 600px;"
                   class="materialize-textarea text-area"></textarea>
     </div>
 </div>
 <div class="row" >
+    <!-- Config fields -->
     <div class="input-field col ">
         <span>Eventsync URL</span>
         <input id="eventsyncURL" type="text">

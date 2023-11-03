@@ -11,7 +11,7 @@ presents that product and the problems it tackles*
 
 # Project component
 
-In this repository, you can find the [core](https://github.com/guillaumeblaquiere/eventsync/tree/main/core) part which 
+In this repository, you can find the [Core](https://github.com/guillaumeblaquiere/eventsync/tree/main/core) part which 
 contains the Eventsync product code and [documentation](https://github.com/guillaumeblaquiere/eventsync/tree/main/core/core.md)
 
 You can also find the [Demo](https://github.com/guillaumeblaquiere/eventsync/tree/main/demo) which allows you to try 
