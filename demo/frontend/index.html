@@ -32,6 +32,8 @@
             console.log(JSON.stringify(data, null, 2));
             eventsyncConfig.value = JSON.stringify(JSON.parse(data), null, 2);
 
+            resetValues();
+
             await readStream();
         });
 
@@ -43,7 +45,33 @@
                 const now = new Date();
 
                 // Display the message in the document.
-                let data = JSON.stringify(JSON.parse(event.data), null, 2);
+                const dataWithoutHeader = JSON.parse(event.data)
+
+                // Programmatically remove the "headers" key from the event object. too noisy display for demo
+                if (dataWithoutHeader.events) {
+                    // Iterate over the "events" array.
+                    if (dataWithoutHeader.events.entryA.events) {
+                        for (const event of dataWithoutHeader.events.entryA.events) {
+                            // Delete the "headers" key from the event object.
+                            delete event.headers;
+                        }
+                    }
+                    // Iterate over the "events" array.
+                    if (dataWithoutHeader.events.entryB.events) {
+                        for (const event of dataWithoutHeader.events.entryB.events) {
+                            // Delete the "headers" key from the event object.
+                            delete event.headers;
+                        }
+                    }
+                    // Iterate over the "events" array.
+                    if (dataWithoutHeader.events.entryC.events) {
+                        for (const event of dataWithoutHeader.events.entryC.events) {
+                            // Delete the "headers" key from the event object.
+                            delete event.headers;
+                        }
+                    }
+                }
+                let data = JSON.stringify(dataWithoutHeader, null, 2);
                 textField.value = now.toISOString().substring(0, 19) + " -----------------\n" + data + "\n\n" + textField.value;
                 actionLogsField.value = "PubSub message received \n" + actionLogsField.value;
             });
@@ -56,6 +84,24 @@
             actionLogsField.value = suffix + " -> HTTP " + response.status + "\n" + actionLogsField.value;
             const data = await response.text();
             return data;
+        }
+
+        function resetValues() {
+            document.getElementById("inputEventA").value="A - ";
+            document.getElementById("inputEventB").value="B - ";
+            document.getElementById("inputEventC").value="C - ";
+        }
+
+        // Create a function that perform a post to an endpoint, return the body content and update the action logs
+        async function post(url, suffix, fieldId) {
+            const eventData = document.getElementById(fieldId).value;
+            const response = await fetch(url + suffix, {
+                method: "POST",
+                body: eventData,
+            });
+            actionLogsField.value = suffix + ", " + eventData + " -> HTTP " + response.status + "\n" + actionLogsField.value;
+            await response.text();
+            resetValues();
         }
 
         // Create a window event listener to close the websocket object when the page unloads
@@ -80,13 +126,28 @@
 
 <div style="float: left;width: 50%; padding: 20px;">
     <!-- button that perform a GET to a url -->
-    <div style="height: 100px">
+    <div style="height: 150px" class="col s12">
         <span>Event simulation</span><br>
-
-        <button  class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/event/entryA')">Event A</button>&nbsp;
-        <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/event/entryB')">Event B</button>&nbsp;
-        <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/event/entryC')">Event C</button>
-        <br/><br/>
+        <div class="row">
+            <div style="width: 33%;" class="col s6">
+                <input id="inputEventA" type="text" placeholder="Event A">
+                <button class="btn waves-effect waves-light"
+                        onclick="post(eventsyncUrl, '/event/entryA', 'inputEventA')">Event A
+                </button>&nbsp;
+            </div>
+            <div style="width: 33%;" class="col s6">
+                <input id="inputEventB" type="text" placeholder="Event B">
+                <button class="btn waves-effect waves-light"
+                        onclick="post(eventsyncUrl, '/event/entryB','inputEventB')">Event B
+                </button>&nbsp;
+            </div>
+            <div style="width: 33%;" class="col s6">
+                <input id="inputEventC" type="text" placeholder="Event C">
+                <button class="btn waves-effect waves-light"
+                        onclick="post(eventsyncUrl, '/event/entryC','inputEventC')">Event C
+                </button>
+            </div>
+        </div>
         <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/trigger')">Force Trigger</button>&nbsp;&nbsp;
         <button class="btn waves-effect waves-light" onclick="get(eventsyncUrl, '/reset')">Reset entries</button>
         <br/>
@@ -101,7 +162,7 @@
 </div>
 <div style="float: right;width: 50%; padding: 20px;">
     <!-- display the action/event logs -->
-    <div style="height: 100px">
+    <div style="height: 150px">
         <span>Action logs</span><br/>
         <textarea type="text" id="actionLogs" style="height: 100%;" class="materialize-textarea text-area"></textarea>
     </div>
@@ -113,7 +174,7 @@
                   class="materialize-textarea text-area"></textarea>
     </div>
 </div>
-<div class="row" >
+<div class="row">
     <!-- Config fields -->
     <div class="input-field col ">
         <span>Eventsync URL</span>
@@ -129,3 +190,5 @@
 </div>
 </body>
 </html>
+
+
